@@ -9,8 +9,8 @@ SOURCEDIR     = source
 BUILDDIR      = build
 STAGEDIR      = ../dst-doc-stage
 
-SOURCEREPO    = https://github.com/direct-state-transfer/dst-doc
-DEPLOYREPO    = https://github.com/direct-state-transfer/direct-state-transfer.github.io
+SOURCEREPO    = https://github.com/manoranjith/dst-doc
+DEPLOYREPO    = https://github.com/manoranjith/manoranjith.github.io
 
 SPHINXHELP    = $(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)"
 SPHINXTARGETS = $(shell $(SPHINXHELP) | awk 'NR > 2 {print $$1}')
