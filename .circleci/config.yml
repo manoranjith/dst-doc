@@ -1,13 +1,15 @@
-version: 2.0
-jobs:
+version: 2.1
 
-  setup-build-deploy:
+executors:
+  python37:
     docker:
       - image: python:3.7-buster
+
+jobs:
+  build:
+    executor: python37
     steps:
       - checkout
-      - add_ssh_keys:
-          fingerprints: "26:bd:89:63:be:7d:ce:a2:99:7f:99:e6:e1:19:f8:f3"
       - restore_cache:
           key: dst-doc-{{ arch }}-{{ .Branch }}-{{ checksum "requirements.txt" }}
       - run: apt-get update
@@ -18,14 +20,33 @@ jobs:
             - "/usr/local/bin"
             - "/usr/local/lib/python3.7/site-packages"
       - run: make html
+      - run: make stage
+      - run: pwd && ls -l
+      - persist_to_workspace:
+          root: /root
+          paths:
+            - project
+            - dst-doc-stage
+
+  deploy:
+    executor: python37
+    steps:
+      - restore_cache:
+          key: dst-doc-{{ arch }}-{{ .Branch }}-{{ checksum "requirements.txt" }}
+      - attach_workspace:
+          at: /root
+      - add_ssh_keys:
+          fingerprints: "26:bd:89:63:be:7d:ce:a2:99:7f:99:e6:e1:19:f8:f3"
       - run: git config --global user.name "circle-ci"
       - run: git config --global user.email "circle-ci@nomail.com"
-      - run: make stage
+      - run: pwd && ls -l
       - run: make deploy
 
-
 workflows:
-  version: 2
+  version: 2.1
   build-deploy-docs:
     jobs:
-      - setup-build-deploy
+      - build
+      - deploy:
+          requires:
+            - build
