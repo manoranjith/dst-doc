@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: "e5:1f:e4:b0:f9:dd:61:82:8a:84:35:05:29:9f:7f:eb"
+          fingerprints: "26:bd:89:63:be:7d:ce:a2:99:7f:99:e6:e1:19:f8:f3"
       - restore_cache:
           key: dst-doc-{{ arch }}-{{ .Branch }}-{{ checksum "requirements.txt" }}
       - run: apt-get update
