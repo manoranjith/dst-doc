@@ -1,0 +1,47 @@
+@startuml act_node_user
+Title Activity Diagram - Interaction between node and user.
+
+skinparam sequence {
+    messageAlign center
+    ArrowThickness 2
+    BoxBorderColor Sienna
+    BoxBackgroundColor SeaShell
+    GroupBodyBackgroundColor transparent
+    NoteTextAlignment center
+    DefaultTextAlignment center
+}
+
+actor "user" as alice
+
+left to right direction
+
+package node {
+    alice -up-> (Help)
+    alice -up-> (Get Config)
+    alice -up-> (Open Session)
+
+}
+
+package session {
+    alice -up-> (Close Session)
+    alice -up-> (Respond to Payment\nChannel Requests)
+    alice -up-> (Subscribe to Payment\nChannel Requests)
+    alice -up-> (Get Payment Channel)
+    alice -up-> (Open Payment Channel)
+    alice -up-> (Get Contacts)
+    alice -up-> (Add Contacts)
+}
+
+package channel {
+    alice -down-> (Send Payment)
+    alice -down-> (Request Payment)
+    alice -down-> (Subscribe to Payment\nChannel Updates)
+    alice -down-> (Respond to Payment\nChannel Updates)
+    alice -down-> (Get Balance)
+    alice -down-> (Close Channel)
+}
+
+node .> session : intstantiates
+session .> channel : intstantiates
+
+@enduml

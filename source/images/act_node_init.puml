@@ -1,0 +1,37 @@
+@startuml act_node_user
+Title Activity Diagram - User initalizing the node.
+
+skinparam sequence {
+    messageAlign center
+    ArrowThickness 2
+    BoxBorderColor Sienna
+    BoxBackgroundColor SeaShell
+    GroupBodyBackgroundColor transparent
+    NoteTextAlignment center
+    DefaultTextAlignment center
+}
+
+actor alice
+
+left to right direction
+
+package computer {
+    (Prepare blockchain node\n[Run own instance or\nuse external service]) as prep_bc
+    (Upload\ncontacts file) as prov_cont
+    (Upload\nkeystore files) as prov_ks
+    (Upload\nconfig file) as prov_cnf
+    (Start\nthe perun node) as start_perun
+}
+
+prov_cnf .up.> prep_bc: requires
+start_perun .up.> prov_cnf: requires
+start_perun .up.> prov_cont: requires
+start_perun .up.> prov_ks: requires
+
+alice -right-> prep_bc
+alice -down-> prov_cont
+alice -down-> prov_cnf
+alice -down-> prov_ks
+alice -right-> start_perun
+
+@enduml

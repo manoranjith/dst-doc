@@ -1,0 +1,154 @@
+@startuml seq_node_bc_user
+Title Sequence Diagram - Interaction amongst node, blockchain and user.
+
+actor alice
+entity "Alice's\nPerun Node" as alice_node
+entity sdk
+
+
+skinparam sequence {
+    messageAlign center
+    ArrowThickness 2
+    BoxBorderColor Sienna
+    BoxBackgroundColor SeaShell
+    GroupBodyBackgroundColor transparent
+    NoteTextAlignment center
+    DefaultTextAlignment center
+}
+hide footbox
+
+group Establish Session
+alice [#DarkBlue]-> alice_node:New Session\n<NewSessionRequest>
+alice [#DarkOliveGreen]-> sdk:bus.New
+alice [#DarkOliveGreen]-> sdk:client.New
+alice_node [#Crimson]-> alice_node:Start listeners, Handlers
+alice <-[#DarkBlue] alice_node:New Session\n<NewSessionResponse>
+'group
+end
+
+group OPEN PHASE
+group Open Channel
+alice [#DarkBlue]-> alice_node: Send Channel Proposal\n<SendChannelProposalRequest>
+alice_node [#Crimson]-> alice_node: Generate Nonce
+alice_node [#DarkOliveGreen]-> sdk: client.ProposeChannel
+opt if no error
+alice_node [#Crimson]-> alice_node: Add to Channels
+'if
+end
+alice <-[#DarkBlue] alice_node: Send Channel Proposal\n<ChannelProposalResponse>
+'group
+end
+
+group Incoming Request
+alice_node <-[#DarkOliveGreen] sdk: ProposalHandler\n(callback)
+alice_node [#Crimson]-> alice_node: Push to ProposalHandlers
+alice <-[#DarkBlue] alice_node: Channel Proposal Notification\n<ChannelProposalNotification>
+...
+alice [#DarkBlue]-> alice_node: Receive Channel Proposal\n<ReceiveChannelProposalRequest>
+alice_node [#Crimson]-> alice_node: Pop out of ProposalHandlers
+alice_node [#DarkOliveGreen]-> sdk: Responder.(Accept/Reject)
+opt if Accept & no error
+alice_node [#Crimson]-> alice_node: Add to Channels
+'if
+end
+alice <-[#DarkBlue] alice_node: Receive Channel Proposal\n<ChannelProposalResponse>
+'group
+end
+'group
+end
+
+group TRANSACT PHASE
+group Transact: Send Payment
+alice [#DarkBlue]-> alice_node: Send Payment\n<SendPaymentRequest>
+alice_node [#DarkOliveGreen]-> sdk: channel.UpdateBy
+opt if no error
+alice_node [#Crimson]-> alice_node: Update last state in Channels
+'if
+end
+alice <-[#DarkBlue] alice_node: Send Payment\n<PaymentResponse>
+'group
+end
+
+group Transact: Receive Payment
+alice_node <-[#DarkOliveGreen] sdk: UpdateHandler\n(callback)
+alice_node [#Crimson]-> alice_node: Push to UpdateResponders
+opt if Final Update
+alice_node [#Crimson]-> alice_node: Lock channel in Channels (use bool)
+'if
+end
+alice <-[#DarkBlue] alice_node: Receive Payment\n<PaymentNotification>
+...
+alice [#DarkBlue]-> alice_node: Receive Payment\n<ReceivePaymentRequest>
+alice_node [#Crimson]-> alice_node: Pop out of UpdateResponder
+alice_node [#DarkOliveGreen]-> sdk: Responder.(Accept/Reject)
+opt if Accept & no error
+alice_node [#Crimson]-> alice_node: Update last state in Channels
+'if
+end
+alice <-[#DarkBlue] alice_node: Receive Payment\n<PaymentResponse>
+'group
+end
+'group
+end
+
+group SETTLE PHASE
+group Close Channel: Collaborative or Non Collaborative
+alice [#DarkBlue]-> alice_node: Close Channel\n<CloseChannelRequest>
+alice_node [#Crimson]-> alice_node: Lock channel in Channels (use bool)
+Note over alice_node #LightGray
+Once locked, State Update cannot be called
+Called when user / sdk sends a final update.
+When final, further updates requests should be rejected.
+endnote
+alice_node [#DarkOliveGreen]-> sdk: Channel.UpdateBy (as final)
+Note over alice_node, sdk #LightGray
+Response from UpdateBy:
+        Success -> Collaborative Close in Settle
+        Error -> Non Collaborative Close in Settle
+Difference will be only in return time of Settle.
+endnote
+alice_node [#DarkOliveGreen]-> sdk: Channel.Settle
+alice <-[#DarkBlue] alice_node: Close Channel\n<CloseChannelResponse>
+'group
+end
+'group
+end
+
+
+
+
+' group Channel Dispute: Invalid State Registered
+' blockchain <-[#Crimson] bob_node: State Register (Invalid)
+' alice_node <-[#Fuchsia] blockchain: State Registered
+' alice_node [#Fuchsia]-> alice_node: Invalid State Registered
+' alice_node [#Crimson]-> blockchain: State Register (Latest)
+' alice_node <[#Fuchsia]- blockchain: State Registered
+' blockchain [#Fuchsia]-> bob_node: State Registered
+' ...
+' Note over blockchain
+' Channel Timeout
+' endnote
+' ...
+' alice_node [#Crimson]-> blockchain: Settle
+' alice_node [#Crimson]-> blockchain: Withdraw Funds
+' blockchain <-[#Crimson] bob_node: Withdraw Funds
+' alice <-[#DarkBlue] alice_node: Channel Closed\n<ChannelClosedNotification>
+' 'group
+' end
+' 'group
+' end
+
+Note over alice_node, sdk #LightGrey
+DataStructure: Channels:
+    map of channelID to
+    struct with
+        last known state (contains version, balance)
+        channel object
+        map of version to Responders
+
+DataStructure: UpdateResponders: nested map of version to Reponsders against channelID in Channels
+
+DataStructure: ProposalResponders: map of proposal id to Reponsders
+endnote
+
+@enduml
