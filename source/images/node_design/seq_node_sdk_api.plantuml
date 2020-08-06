@@ -1,5 +1,5 @@
-@startuml seq_node_bc_user
-Title Sequence Diagram - Interaction amongst node, blockchain and user.
+@startuml seq_node_sdk_api
+Title Sequence Diagram - Interaction amongst node, sdk and api.
 
 actor alice
 entity "Alice's\nPerun Node" as alice_node
