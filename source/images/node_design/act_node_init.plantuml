@@ -24,9 +24,9 @@ package computer {
 }
 
 prov_cnf .up.> prep_bc: requires
+prov_cnf .up.> prov_cont: requires
+prov_cnf .up.> prov_ks: requires
 start_perun .up.> prov_cnf: requires
-start_perun .up.> prov_cont: requires
-start_perun .up.> prov_ks: requires
 
 alice -right-> prep_bc
 alice -down-> prov_cont

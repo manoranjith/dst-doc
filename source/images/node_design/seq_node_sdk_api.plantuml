@@ -19,8 +19,8 @@ hide footbox
 
 group Establish Session
 alice [#DarkBlue]-> alice_node:New Session\n<NewSessionRequest>
-alice [#DarkOliveGreen]-> sdk:bus.New
-alice [#DarkOliveGreen]-> sdk:client.New
+alice_node [#DarkOliveGreen]-> sdk:bus.New
+alice_node [#DarkOliveGreen]-> sdk:client.New
 alice_node [#Crimson]-> alice_node:Start listeners, Handlers
 alice <-[#DarkBlue] alice_node:New Session\n<NewSessionResponse>
 'group
@@ -41,17 +41,21 @@ end
 
 group Incoming Request
 alice_node <-[#DarkOliveGreen] sdk: ProposalHandler\n(callback)
-alice_node [#Crimson]-> alice_node: Push to ProposalHandlers
+alice_node [#Crimson]-> alice_node: Push ProposalResponder
 alice <-[#DarkBlue] alice_node: Channel Proposal Notification\n<ChannelProposalNotification>
 ...
 alice [#DarkBlue]-> alice_node: Receive Channel Proposal\n<ReceiveChannelProposalRequest>
-alice_node [#Crimson]-> alice_node: Pop out of ProposalHandlers
+alice_node [#Crimson]-> alice_node: Pop out ProposalResponder
+alt if timeout not expired
 alice_node [#DarkOliveGreen]-> sdk: Responder.(Accept/Reject)
 opt if Accept & no error
 alice_node [#Crimson]-> alice_node: Add to Channels
 'if
 end
+else if timeout expired
 alice <-[#DarkBlue] alice_node: Receive Channel Proposal\n<ChannelProposalResponse>
+'if
+end
 'group
 end
 'group
@@ -69,6 +73,12 @@ alice <-[#DarkBlue] alice_node: Send Payment\n<PaymentResponse>
 'group
 end
 
+Note over alice_node #LightGray
+If same version state is incoming & outgoing
+which one to drop, which one to accept ?
+Check what logic sdk does ?
+endnote
+
 group Transact: Receive Payment
 alice_node <-[#DarkOliveGreen] sdk: UpdateHandler\n(callback)
 alice_node [#Crimson]-> alice_node: Push to UpdateResponders
@@ -79,13 +89,19 @@ end
 alice <-[#DarkBlue] alice_node: Receive Payment\n<PaymentNotification>
 ...
 alice [#DarkBlue]-> alice_node: Receive Payment\n<ReceivePaymentRequest>
-alice_node [#Crimson]-> alice_node: Pop out of UpdateResponder
+alice_node [#Crimson]-> alice_node: Pop out UpdateResponder
+alt if timeout not expired
 alice_node [#DarkOliveGreen]-> sdk: Responder.(Accept/Reject)
 opt if Accept & no error
+alice_node [#Crimson]-> alice_node: Discard previous version Responders
 alice_node [#Crimson]-> alice_node: Update last state in Channels
 'if
 end
+else if timeout expired
+alice_node [#Crimson]-> alice_node: Pop out & drop UpdateResponder\nfor all previous versions.
 alice <-[#DarkBlue] alice_node: Receive Payment\n<PaymentResponse>
+'alt
+end
 'group
 end
 'group
