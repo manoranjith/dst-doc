@@ -32,7 +32,7 @@ alice [#DarkBlue]-> alice_node: Send Channel Proposal\n<SendChannelProposalReque
 alice_node [#Crimson]-> alice_node: Generate Nonce
 alice_node [#DarkOliveGreen]-> sdk: client.ProposeChannel
 opt if no error
-alice_node [#Crimson]-> alice_node: Add to Channels
+alice_node [#Crimson]-> alice_node: Push Channel\nto Channels
 'if
 end
 alice <-[#DarkBlue] alice_node: Send Channel Proposal\n<ChannelProposalResponse>
@@ -41,15 +41,15 @@ end
 
 group Incoming Request
 alice_node <-[#DarkOliveGreen] sdk: ProposalHandler\n(callback)
-alice_node [#Crimson]-> alice_node: Push ProposalResponder
+alice_node [#Crimson]-> alice_node: Push ProposalResponder\nto ProposalResponders
 alice <-[#DarkBlue] alice_node: Channel Proposal Notification\n<ChannelProposalNotification>
 ...
 alice [#DarkBlue]-> alice_node: Receive Channel Proposal\n<ReceiveChannelProposalRequest>
-alice_node [#Crimson]-> alice_node: Pop out ProposalResponder
+alice_node [#Crimson]-> alice_node: Pop out from ProposalResponders
 alt if timeout not expired
 alice_node [#DarkOliveGreen]-> sdk: Responder.(Accept/Reject)
 opt if Accept & no error
-alice_node [#Crimson]-> alice_node: Add to Channels
+alice_node [#Crimson]-> alice_node: Push Channel\nto Channels
 'if
 end
 else if timeout expired
@@ -81,7 +81,7 @@ endnote
 
 group Transact: Receive Payment
 alice_node <-[#DarkOliveGreen] sdk: UpdateHandler\n(callback)
-alice_node [#Crimson]-> alice_node: Push to UpdateResponders
+alice_node [#Crimson]-> alice_node: Push UpdateResponder\nto UpdateResponders
 opt if Final Update
 alice_node [#Crimson]-> alice_node: Lock channel in Channels (use bool)
 'if
@@ -89,16 +89,16 @@ end
 alice <-[#DarkBlue] alice_node: Receive Payment\n<PaymentNotification>
 ...
 alice [#DarkBlue]-> alice_node: Receive Payment\n<ReceivePaymentRequest>
-alice_node [#Crimson]-> alice_node: Pop out UpdateResponder
+alice_node [#Crimson]-> alice_node: Pop out UpdateResponder\nfrom UpdateResponders
 alt if timeout not expired
 alice_node [#DarkOliveGreen]-> sdk: Responder.(Accept/Reject)
 opt if Accept & no error
-alice_node [#Crimson]-> alice_node: Discard previous version Responders
+alice_node [#Crimson]-> alice_node: Drop Responders\nfor previous versions\nof the channel state.
 alice_node [#Crimson]-> alice_node: Update last state in Channels
 'if
 end
 else if timeout expired
-alice_node [#Crimson]-> alice_node: Pop out & drop UpdateResponder\nfor all previous versions.
+alice_node [#Crimson]-> alice_node: Drop Responders\nfor previous versions\nof the channel state.
 alice <-[#DarkBlue] alice_node: Receive Payment\n<PaymentResponse>
 'alt
 end
@@ -112,8 +112,8 @@ group Close Channel: Collaborative or Non Collaborative
 alice [#DarkBlue]-> alice_node: Close Channel\n<CloseChannelRequest>
 alice_node [#Crimson]-> alice_node: Lock channel in Channels (use bool)
 Note over alice_node #LightGray
-Once locked, State Update cannot be called
 Called when user / sdk sends a final update.
+Once locked, State Update cannot be called
 When final, further updates requests should be rejected.
 endnote
 alice_node [#DarkOliveGreen]-> sdk: Channel.UpdateBy (as final)
