@@ -17,9 +17,9 @@ left to right direction
 
 package computer {
     (Prepare blockchain node\n[Run own instance or\nuse external service]) as prep_bc
-    (Upload\ncontacts file) as prov_cont
-    (Upload\nkeystore files) as prov_ks
-    (Upload\nconfig file) as prov_cnf
+    (Provide\ncontacts file) as prov_cont
+    (Provide\nkeystore files) as prov_ks
+    (Provide\nconfig file) as prov_cnf
     (Start\nthe perun node) as start_perun
 }
 
