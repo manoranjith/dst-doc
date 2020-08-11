@@ -80,7 +80,7 @@ alice_node [#Crimson]-> alice_node: Push Channel\nto Channels
 'if
 end
 else if timeout expired
-alice_node [#Crimson]-> alice_node: Drop Channel\nfrom Channels
+alice_node [#Crimson]-> alice_node: Drop ProposalResponder\nfrom ProposalResponders
 'if
 end
 alice <-[#DarkBlue] alice_node: Receive Channel Proposal\n<PayChProposalResp>
@@ -93,13 +93,13 @@ end
 
 group TRANSACT PHASE
 group Transact: Outgoing Channel Update
-alice [#DarkBlue]-> alice_node: Send Payment\n<SendPayChUpdateReq>
+alice [#DarkBlue]-> alice_node: Send Payment Channel Update\n<SendPayChUpdateReq>
 alice_node [#DarkOliveGreen]-> sdk: channel.UpdateBy
 opt if no error
 alice_node [#Crimson]-> alice_node: Update last state in Channels
 'if
 end
-alice <-[#DarkBlue] alice_node: Send Payment\n<PayChUpdateResp>
+alice <-[#DarkBlue] alice_node: Send Payment Channel Update\n<PayChUpdateResp>
 'group
 end
 
@@ -115,12 +115,7 @@ alice [#DarkBlue]-> alice_node: Subscribe to Payment Channel Updates\n<SubPayChU
 alice_node [#Crimson]-> alice_node: Register Subscription
 alice <-[#DarkBlue] alice_node: Subscribe to Payment Channel Updates\n<SubPayChUpdatesResp>
 loop over Cached Notifications
-alice <-[#DarkBlue] alice_node: Receive Payment\n<PayChUpdateNotif>
-Note over alice, alice_node #LightGray
-It might provide a configuration, where user
-receives only latest channel updates.
-To be done later.
-endnote
+alice <-[#DarkBlue] alice_node: Receive Payment Channel Update\n<PayChUpdateNotif>
 'if
 end
 'group
@@ -147,7 +142,7 @@ endnote
 'if
 end
 alt if Subscription Exists
-alice <-[#DarkBlue] alice_node: Receive Payment\n<PayChUpdateNotif>
+alice <-[#DarkBlue] alice_node: Receive Payment Channel Update\n<PayChUpdateNotif>
 else
 alice_node [#Crimson]-> alice_node: Cache Notification
 'if
@@ -156,20 +151,18 @@ end
 'group
 ...
 group Respond To Notification
-alice [#DarkBlue]-> alice_node: Receive Payment\n<RecvPayChUpdateReq>
+alice [#DarkBlue]-> alice_node: Receive Payment Channel Update\n<RecvPayChUpdateReq>
 alice_node [#Crimson]-> alice_node: Pop out UpdateResponder\nfrom UpdateResponders
 alt if timeout not expired
 alice_node [#DarkOliveGreen]-> sdk: Responder.(Accept/Reject)
 opt if Accept & no error
-alice_node [#Crimson]-> alice_node: Drop Responders\nfor previous versions\nof the channel state.
 alice_node [#Crimson]-> alice_node: Update last state in Channels
 'if
 end
 else if timeout expired
-alice_node [#Crimson]-> alice_node: Drop Responders\nfor previous versions\nof the channel state.
-alice <-[#DarkBlue] alice_node: Receive Payment\n<PayChUpdateResp>
 'alt
 end
+alice <-[#DarkBlue] alice_node: Receive Payment Channel Update\n<PayChUpdateResp>
 'group
 end
 'group
@@ -190,7 +183,7 @@ Note over alice_node, sdk #LightGray
 Response from UpdateBy:
         Success -> Collaborative Close in Settle
         Error -> Non Collaborative Close in Settle
-Difference will be only in return time of Settle.
+Difference will be only in return time of & cost for Settle.
 endnote
 alice_node [#DarkOliveGreen]-> sdk: Channel.Settle
 alice_node [#DarkOliveGreen]-> sdk: Channel.Close
@@ -234,7 +227,7 @@ alice_node [#Crimson]-> alice_node: ChannelLock = Closed.
 alice_node [#Crimson]-> alice_node: Fetch last known state of channel.
 alice_node [#DarkOliveGreen]-> sdk: Channel.Close
 alice <-[#DarkBlue] alice_node: Close Channel\n<PayChCloseNotif>
-alice_node [#Crimson]->alice_node: Unregister Notification
+alice_node [#Crimson]->alice_node: Unregister Subscription
 Note over alice, sdk #LightGray
 There can be only one channel closed notification, hence unregistering after delivery.
 endnote
@@ -261,7 +254,7 @@ DataStructure: Channels:
         channel object
         map of version to Responders
 
-DataStructure: UpdateResponders: nested map of version to Reponsders against channelID in Channels
+DataStructure: UpdateResponders: nested map of version to Responders against channelID in Channels
 
 DataStructure: ProposalResponders: map of proposal id to Reponsders
 
